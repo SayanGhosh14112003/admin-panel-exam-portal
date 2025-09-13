@@ -18,6 +18,9 @@ const ExamResultsAnalysis = () => {
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
 
+  const [isOpen, setIsOpen] = useState(false);
+  const [examCode, setExamCode] = useState('');
+
   const API_BASE_URL = "https://exam-portal-8xft.onrender.com/api";
 
   // Fetch exam codes and initial analysis on component mount
@@ -27,6 +30,14 @@ const ExamResultsAnalysis = () => {
       await fetchAnalysis();
     })()
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSubmit = async() => {
+    console.log('Entered Exam Code:', examCode);
+    setShowDeleteClipModal(true);
+    setIsOpen(false);
+  };
+
+
   const handleConfirmDeleteExamResult = async () => {
     try {
       setDelLoading(true);
@@ -40,21 +51,20 @@ const ExamResultsAnalysis = () => {
       // if (data.success) {
       //   // Remove clip from local state
       //   setEditingClips(clips => clips.filter(clip => clip.clipId !== clipToDelete));
-      await fetch(`${API_BASE_URL}/admin/delete-result/${selectedUserId}/${selectedExamCode}/${selectedStartTime}`, {
+    await fetch(`${API_BASE_URL}/admin/delete-all-results/${examCode}`, {
     method: 'DELETE'
-});
-
+    });
+      console.log(examCode)
       setFilteredAttempts(prev =>
         prev.filter(attempt =>
-          !(attempt.userId === selectedUserId && attempt.examCode === selectedExamCode && attempt.startTime === selectedStartTime)
+          !(attempt.examCode === examCode)
         )
       );
+      await fetchAnalysis();
       //   setSuccess(`Clip ${clipToDelete} deleted successfully`);
       setShowDeleteClipModal(false);
       // setClipToDelete(null);
-      setSelectedExamCode('');
-      setSelectedUserId('');
-      setSelectedStartTime('');
+      setExamCode('');
       // } else {
       //   setError(data.error || 'Failed to delete clip');
       // }
@@ -71,19 +81,6 @@ const ExamResultsAnalysis = () => {
     setSelectedExamCode('');
     setSelectedUserId('');
     setSelectedStartTime('');
-  };
-  const deletExamAttempt = async (userId, examCode, startTime) => {
-    try {
-      // console.log(userId,examCode,startTime);
-      setSelectedStartTime(startTime);
-      setSelectedExamCode(examCode);
-      setSelectedUserId(userId);
-      setShowDeleteClipModal(true);
-
-    }
-    catch (err) {
-      console.error(err);
-    }
   };
   const fetchExamCodes = async () => {
     try {
@@ -210,6 +207,16 @@ const ExamResultsAnalysis = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsOpen(true)}
+              disabled={false}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-700 hover:bg-gray-50 hover:text-red-700 focus:outline-none disabled:opacity-50"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3" />
+              </svg>
+              Delete Exam Results
+            </button>
             <select
               value={selectedExamCode}
               onChange={async (e) => await handleExamCodeChange(e.target.value)}
@@ -538,9 +545,6 @@ const ExamResultsAnalysis = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           End Time
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Action
-                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -573,17 +577,6 @@ const ExamResultsAnalysis = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {attempt.endTime ? formatDate(attempt.endTime) : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            <button
-                              onClick={async () => await deletExamAttempt(attempt.userId, attempt.examCode, attempt.startTime)}
-                              className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
-                              title="Delete this clip"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
                           </td>
                         </tr>
                       ))}
@@ -624,10 +617,10 @@ const ExamResultsAnalysis = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mt-5">Delete Exam Result</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mt-5">Delete Exam Results</h3>
                   <div className="mt-2 px-7 py-3">
                     <p className="text-sm text-gray-500">
-                      Are you sure you want to delete this exam result? This action cannot be undone.
+                      Are you sure you want to delete the exam results of <strong>{examCode}</strong>? This action cannot be undone.
                     </p>
                   </div>
                   <div className="items-center px-4 py-3">
@@ -651,6 +644,36 @@ const ExamResultsAnalysis = () => {
           )}
           {/* ----- */}
         </>
+      )}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          {/* Modal content */}
+          <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+            <h2 className="text-lg font-semibold mb-4">Enter Exam Code</h2>
+            <input
+              type="text"
+              value={examCode}
+              onChange={(e) => setExamCode(e.target.value)}
+              placeholder="Exam Code"
+              className="w-full p-2 border rounded mb-4"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => setIsOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+              onClick={handleSubmit}
+              disabled={false}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-700 hover:bg-gray-50 hover:text-red-700 focus:outline-none disabled:opacity-50"
+            >
+              Delete
+            </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
