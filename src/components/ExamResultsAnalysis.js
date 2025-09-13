@@ -31,52 +31,47 @@ const ExamResultsAnalysis = () => {
     })()
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSubmit = async() => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log('Entered Exam Code:', examCode);
-    setShowDeleteClipModal(true);
     setIsOpen(false);
+    setShowDeleteClipModal(true);
   };
 
 
-  const handleConfirmDeleteExamResult = async () => {
+  const handleConfirmDeleteExamResult = async (e) => {
+    e.preventDefault();
+    console.log("handleConfirDelete")
+    if (!examCode) return;
+
     try {
       setDelLoading(true);
       setError('');
 
-      // const response = await fetch(`${API_BASE_URL}/admin/clip/${selectedExam}/${clipToDelete}`, {
-      //   method: 'DELETE'
-      // });
-      // const data = await response.json();
+      const response = await fetch(`${API_BASE_URL}/admin/delete-all-results/${examCode}`, {
+        method: 'DELETE'
+      });
 
-      // if (data.success) {
-      //   // Remove clip from local state
-      //   setEditingClips(clips => clips.filter(clip => clip.clipId !== clipToDelete));
-    await fetch(`${API_BASE_URL}/admin/delete-all-results/${examCode}`, {
-    method: 'DELETE'
-    });
-      console.log(examCode)
+      if (!response.ok) throw new Error('Failed to delete exam results');
+
       setFilteredAttempts(prev =>
-        prev.filter(attempt =>
-          !(attempt.examCode === examCode)
-        )
+        prev.filter(attempt => attempt.examCode !== examCode)
       );
+
       await fetchAnalysis();
-      //   setSuccess(`Clip ${clipToDelete} deleted successfully`);
       setShowDeleteClipModal(false);
-      // setClipToDelete(null);
       setExamCode('');
-      // } else {
-      //   setError(data.error || 'Failed to delete clip');
-      // }
     } catch (err) {
       setError('Network error: Unable to delete result');
-      console.error('Error deleting clip:', err);
+      console.error('Error deleting exam results:', err);
     } finally {
       setDelLoading(false);
     }
   };
 
-  const handleCancelDeleteExamResult = () => {
+
+  const handleCancelDeleteExamResult = (e) => {
+    e.preventDefault();
     setShowDeleteClipModal(false);
     setSelectedExamCode('');
     setSelectedUserId('');
@@ -210,7 +205,7 @@ const ExamResultsAnalysis = () => {
             <button
               onClick={() => setIsOpen(true)}
               disabled={false}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-700 hover:bg-gray-50 hover:text-red-700 focus:outline-none disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3" />
@@ -298,8 +293,8 @@ const ExamResultsAnalysis = () => {
               <button
                 onClick={clearFilters}
                 className={`inline-flex items-center justify-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${(searchUserId || filterStatus || filterStartDate || filterEndDate)
-                    ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500'
-                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-blue-500'
+                  ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500'
+                  : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-blue-500'
                   }`}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -608,7 +603,13 @@ const ExamResultsAnalysis = () => {
             </div>
           )}
           {/* ----- */}
+
+          {/* ----- */}
+        </>
+      )}
+          {/* Delete Exam Result Modal */}
           {showDeleteClipModal && (
+         <form onSubmit={handleConfirmDeleteExamResult}>
             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999]">
               <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div className="mt-3 text-center">
@@ -624,54 +625,58 @@ const ExamResultsAnalysis = () => {
                     </p>
                   </div>
                   <div className="items-center px-4 py-3">
-                    <button
-                      onClick={handleConfirmDeleteExamResult}
-                      disabled={loading}
-                      className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-                    >
-                      {delloading ? 'Deleting...' : 'Delete Exam Result'}
-                    </button>
-                    <button
-                      onClick={handleCancelDeleteExamResult}
-                      className="mt-3 px-4 py-2 bg-white text-gray-500 text-base font-medium rounded-md w-full shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      Cancel
-                    </button>
+                      <button
+                        autoFocus={true}
+                        type="submit"
+                        onClick={handleConfirmDeleteExamResult}
+                        disabled={delloading}
+                        className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                      >
+                        {delloading ? 'Deleting...' : 'Delete Exam Result'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelDeleteExamResult}
+                        className="mt-3 px-4 py-2 bg-white text-gray-500 text-base font-medium rounded-md w-full shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Cancel
+                      </button>
                   </div>
                 </div>
               </div>
             </div>
+           </form>
           )}
-          {/* ----- */}
-        </>
-      )}
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           {/* Modal content */}
           <div className="bg-white rounded-lg shadow-lg p-6 w-80">
             <h2 className="text-lg font-semibold mb-4">Enter Exam Code</h2>
-            <input
-              type="text"
-              value={examCode}
-              onChange={(e) => setExamCode(e.target.value)}
-              placeholder="Exam Code"
-              className="w-full p-2 border rounded mb-4"
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                onClick={() => setIsOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-              onClick={handleSubmit}
-              disabled={false}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-700 hover:bg-gray-50 hover:text-red-700 focus:outline-none disabled:opacity-50"
-            >
-              Delete
-            </button>
-            </div>
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                value={examCode}
+                onChange={(e) => setExamCode(e.target.value)}
+                placeholder="Exam Code"
+                className="w-full p-2 border rounded mb-4"
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  onClick={() => setIsOpen(false)}
+                  type='button'
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  // onClick={handleSubmit}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-700 hover:bg-gray-50 hover:text-red-700 focus:outline-none disabled:opacity-50"
+                >
+                  Delete
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
